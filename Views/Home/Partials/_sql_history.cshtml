@@ -1,0 +1,97 @@
+@{
+    var sqlHistory = ViewData["SqlHistory"] as System.Data.DataTable;
+}
+
+<style>
+    .dba-datatable thead tr[style*="height: 0px"] {
+        display: none !important;
+    }
+</style>
+
+<!-- SQL 歷史搜尋框 -->
+<div class="mb-4 relative max-w-md">
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+    </div>
+    <input type="text" id="sqlHistorySearchInput"
+           class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+           placeholder="搜尋 SQL 內容..."
+           onkeyup="filterSqlHistoryTable()">
+</div>
+
+<div class="dba-table-wrapper overflow-auto rounded-lg border border-slate-200 shadow-sm" style="max-height:420px">
+    <table id="sqlHistoryTable" class="min-w-full text-sm dba-datatable">
+        <thead class="bg-blue-600 text-white sticky top-0 z-10">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold">SQL ID</th>
+                <th class="px-4 py-3 text-left font-semibold">SQL 語句預覽</th>
+                <th class="px-4 py-3 text-left font-semibold">最後活動時間</th>
+                <th class="px-4 py-3 text-right font-semibold">操作</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+            @if (sqlHistory != null)
+            {
+                foreach (System.Data.DataRow row in sqlHistory.Rows)
+                {
+                    var sqlId = row["SQL_ID"].ToString();
+                    var sqlText = row["SQL_PREVIEW"].ToString();
+                    var lastActive = row["LAST_ACTIVE_TIME"].ToString();
+
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-3 align-middle">
+                            <code class="text-blue-600 font-bold flex items-center gap-1 text-xs">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                                </svg>
+                                @sqlId
+                            </code>
+                        </td>
+                        <td class="px-4 py-3 align-middle">
+                            <span class="text-slate-600 font-mono text-xs truncate max-w-xs inline-block" title="@sqlText">@sqlText...</span>
+                        </td>
+                        <td class="px-4 py-3 align-middle">
+                            <small class="text-slate-500 flex items-center gap-1 text-xs">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                @lastActive
+                            </small>
+                        </td>
+                        <td class="px-4 py-3 text-right align-middle whitespace-nowrap">
+                            <button class="p-2 text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                    onclick="viewFullSql('@sqlId')" title="檢視全文">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+/**
+ * 搜尋目前的 SQL 歷史表格
+ */
+function filterSqlHistoryTable() {
+    const input = document.getElementById('sqlHistorySearchInput');
+    if (!input) return;
+
+    const filter = input.value.toLowerCase().trim();
+    const table = document.getElementById('sqlHistoryTable');
+    if (!table) return;
+
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+</script>

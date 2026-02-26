@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自訂全域樣式 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+
+:root {
+    --dba-bg: #f8fafc;
+    --dba-primary: #0f172a;
+}
+
+* {
+    font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    @apply bg-slate-50 text-slate-900;
+}
+
+/* 優化滾動條 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+}

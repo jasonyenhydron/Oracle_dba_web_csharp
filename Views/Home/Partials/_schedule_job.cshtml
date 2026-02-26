@@ -1,0 +1,261 @@
+<!-- Schedule Job 管理界面 -->
+<div class="w-full">
+    <!-- 頂部操作欄 -->
+    <div class="mb-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <!-- 搜尋框 -->
+            <div class="relative w-full md:max-w-xs group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input type="text" id="jobSearchInput"
+                       class="block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner bg-white"
+                       placeholder="搜尋 Job (按 / 聚焦)..."
+                       onkeyup="filterJobsTable()">
+                <!-- 清除按鈕 -->
+                <button onclick="const i=document.getElementById('jobSearchInput'); i.value=''; i.focus(); typeof filterJobsTable === 'function' && filterJobsTable();"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-300 hover:text-slate-500 focus:outline-none">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap justify-end items-center gap-2 w-full md:w-auto">
+                <!-- 批次操作按鈕 -->
+                <button class="px-3 py-1.5 bg-white text-yellow-600 border border-yellow-600 text-sm font-medium rounded hover:bg-yellow-50 shadow-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors" id="batchDisableBtn" onclick="batchDisableJobs()" disabled>
+                    <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    批次停用
+                </button>
+                <button class="px-3 py-1.5 bg-white text-green-600 border border-green-600 text-sm font-medium rounded hover:bg-green-50 shadow-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors" id="batchEnableBtn" onclick="batchEnableJobs()" disabled>
+                    <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    批次啟用
+                </button>
+                <button class="px-3 py-1.5 bg-white text-red-600 border border-red-600 text-sm font-medium rounded hover:bg-red-50 shadow-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors" id="batchDeleteBtn" onclick="batchDeleteJobs()" disabled>
+                    <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    批次刪除
+                </button>
+
+                <div class="w-px h-6 bg-slate-200 mx-1 hidden md:block"></div>
+
+                <button class="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 shadow-sm flex items-center transition-colors" onclick="createNewJob()">
+                    <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    建立新 Job
+                </button>
+                <button class="px-3 py-1.5 bg-white text-blue-600 border border-blue-600 text-sm font-medium rounded hover:bg-blue-50 shadow-sm flex items-center transition-colors" onclick="refreshJobList()">
+                    <svg class="w-4 h-4 me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    重新整理
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs 列表 -->
+    <div class="w-full">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+            <div class="dba-table-wrapper overflow-auto rounded-lg" style="max-height:420px">
+                <table class="min-w-full text-sm dba-datatable" id="jobsTable">
+                    <thead class="bg-blue-600 text-white sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[5%]">
+                                <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" id="selectAllJobs" onchange="toggleSelectAll()">
+                            </th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[13%]">操作</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[10%]">擁有者</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[15%]">Job 名稱</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[10%]">狀態</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[12%]">排程設定</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[12%]">上次執行</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[12%]">下次執行</th>
+                            <th class="px-4 py-3 font-semibold whitespace-nowrap w-[8%] text-center">執行次數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody" class="divide-y divide-slate-200">
+                        <tr>
+                            <td colspan="9" class="px-4 py-8 text-center text-slate-500">
+                                <div class="inline-block w-5 h-5 border-2 border-current border-r-transparent rounded-full animate-spin mr-2 align-middle"></div>
+                                載入 Jobs 中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Job 詳細資訊 Modal -->
+<div class="fixed inset-0 z-[70] hidden flex flex-col" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="jobDetailModal">
+    <!-- Background overlay -->
+    <div class="absolute inset-0 bg-gray-900 bg-opacity-60" aria-hidden="true" onclick="closeJobModal('jobDetailModal')"></div>
+    <!-- Fullscreen panel -->
+    <div class="relative flex flex-col w-full h-full bg-white shadow-2xl">
+        <!-- Header -->
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center text-white flex-shrink-0">
+            <h3 class="text-lg leading-6 font-semibold flex items-center" id="modal-title">
+                <svg class="w-5 h-5 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Job 詳情
+            </h3>
+            <button type="button" class="bg-transparent rounded-md text-blue-100 hover:text-white focus:outline-none" onclick="closeJobModal('jobDetailModal')">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <!-- Content (scrollable) -->
+        <div class="flex-1 overflow-y-auto px-6 py-5" id="jobDetailContent">
+            <div class="text-center py-5">
+                <div class="inline-block w-8 h-8 border-4 border-blue-600 border-r-transparent rounded-full animate-spin"></div>
+                <p class="mt-3 text-slate-500">載入中...</p>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div class="bg-gray-50 border-t border-gray-200 px-6 py-3 flex justify-end flex-shrink-0">
+            <button type="button"
+                class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow"
+                onclick="closeJobModal('jobDetailModal')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                關閉視窗
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 建立/編輯 Job Modal (Tailwind Version) -->
+<div id="jobFormModal" class="fixed inset-0 z-50 hidden flex flex-col" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Background overlay -->
+    <div class="absolute inset-0 bg-gray-900 bg-opacity-60" aria-hidden="true" onclick="closeJobModal('jobFormModal')"></div>
+    <!-- Fullscreen panel -->
+    <div class="relative flex flex-col w-full h-full bg-white shadow-2xl">
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center text-white flex-shrink-0">
+            <h3 class="text-lg leading-6 font-semibold flex items-center" id="jobModalLabel">
+                <svg class="w-5 h-5 me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                建立新 Job
+            </h3>
+            <button type="button" class="bg-transparent rounded-md text-blue-100 hover:text-white focus:outline-none" onclick="closeJobModal('jobFormModal')">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6 py-5">
+                <form id="jobForm" class="space-y-4">
+                    <div>
+                        <label for="jobName" class="block text-sm font-medium text-gray-700">Job 名稱 *</label>
+                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="jobName" required placeholder="例如：NIGHTLY_BACKUP_JOB">
+                    </div>
+
+                    <div>
+                        <label for="jobType" class="block text-sm font-medium text-gray-700">Job 類型 *</label>
+                        <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="jobType" onchange="toggleJobTypeFields()">
+                            <option value="PLSQL_BLOCK">PL/SQL Block</option>
+                            <option value="STORED_PROCEDURE">Stored Procedure</option>
+                        </select>
+                    </div>
+
+                    <div id="plsqlBlockField">
+                        <label for="jobAction" class="block text-sm font-medium text-gray-700">PL/SQL 程式碼 *</label>
+                        <textarea class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono border p-2" id="jobAction" rows="6" placeholder="BEGIN&#10;  -- Your PL/SQL code here&#10;END;"></textarea>
+                    </div>
+
+                    <div id="procedureField" class="hidden">
+                        <label for="procedureName" class="block text-sm font-medium text-gray-700">Procedure 名稱 *</label>
+                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono border p-2" id="procedureName" placeholder="例如：SCHEMA.PROCEDURE_NAME">
+                    </div>
+
+                    <div>
+                        <label for="scheduleType" class="block text-sm font-medium text-gray-700">排程類型 *</label>
+                        <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="scheduleType" onchange="toggleScheduleFields()">
+                            <option value="INTERVAL">重複間隔 (Interval)</option>
+                            <option value="CRON">Cron 表達式</option>
+                            <option value="ONCE">單次執行</option>
+                        </select>
+                    </div>
+
+                    <div id="intervalField">
+                        <label for="repeatInterval" class="block text-sm font-medium text-gray-700">重複間隔 *</label>
+                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="repeatInterval" placeholder="例如：FREQ=DAILY; BYHOUR=2; BYMINUTE=0">
+                        <p class="mt-1 text-xs text-gray-500">範例：每天凌晨2點執行</p>
+                    </div>
+
+                    <div id="cronField" class="hidden">
+                        <label for="cronExpression" class="block text-sm font-medium text-gray-700">Cron 表達式 *</label>
+                        <input type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm font-mono border p-2" id="cronExpression" placeholder="例如：0 2 * * *">
+                        <p class="mt-1 text-xs text-gray-500">格式：分 時 日 月 週</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700">開始時間</label>
+                            <input type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="startDate">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700">結束時間</label>
+                            <input type="datetime-local" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="endDate">
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="autoEnable" name="autoEnable" type="checkbox" checked class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="autoEnable" class="font-medium text-gray-700">建立後自動啟用</label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="jobComments" class="block text-sm font-medium text-gray-700">註解</label>
+                        <textarea class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2" id="jobComments" rows="2" placeholder="Job 的說明描述"></textarea>
+                    </div>
+                </form>
+        </div>
+        <!-- Footer -->
+        <div class="bg-gray-50 border-t border-gray-200 px-6 py-3 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors" onclick="submitJob()">
+                建立 Job
+            </button>
+            <button type="button"
+                class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow"
+                onclick="closeJobModal('jobFormModal')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                關閉視窗
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 確認對話框 Modal (Tailwind Version) -->
+<div id="jobConfirmModal" class="fixed inset-0 z-[60] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeJobModal('jobConfirmModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div id="confirmIconContainer" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="confirmTitle">確認動作</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500" id="confirmMessage">確定要執行此操作嗎？</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                <button type="button" id="confirmBtn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    確定
+                </button>
+                <button type="button"
+                    class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-full font-semibold text-sm flex items-center gap-2 transition-colors shadow"
+                    onclick="closeJobModal('jobConfirmModal')">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

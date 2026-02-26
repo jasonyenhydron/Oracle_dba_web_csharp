@@ -1,0 +1,239 @@
+@{
+    var types = new[] {
+        new { Name = "TABLE", Icon = "📊" },
+        new { Name = "VIEW", Icon = "👁️" },
+        new { Name = "PROCEDURE", Icon = "⚙️" },
+        new { Name = "FUNCTION", Icon = "🔧" },
+        new { Name = "PACKAGE", Icon = "🎁" }
+    };
+    var currentOwner = ViewData["CurrentOwner"] as string;
+    var dtObjects = ViewData["Objects"] as System.Data.DataTable;
+}
+
+<style>
+    .dba-datatable thead tr[style*="height: 0px"] {
+        display: none !important;
+    }
+</style>
+
+<!-- 物件類型過濾與搜尋 -->
+<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div class="flex flex-col gap-2">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                物件類型過濾
+            </div>
+            <div class="flex flex-wrap gap-2" id="objectTypeFilterRow">
+                @foreach (var t in types)
+                {
+                    bool isFirst = t == types.First();
+                    <button class="type-tab px-4 py-1.5 rounded-full text-sm font-bold transition-all @(isFirst ? "bg-blue-600 text-white shadow-md" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100")"
+                            data-type="@t.Name">
+                        @t.Icon @t.Name
+                    </button>
+                }
+                <button class="type-tab px-4 py-1.5 rounded-full text-sm font-bold transition-all bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                        data-type="SOURCE_SEARCH">
+                    🔍 SOURCE SEARCH
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜尋框 -->
+        <div id="objectSearchWrapper" class="relative w-full lg:max-w-xs group">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            <input type="text" id="objectSearchInput"
+                   class="block w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner bg-white/50 focus:bg-white"
+                   placeholder="搜尋物件 (按 / 聚焦)..."
+                   onkeyup="filterObjectTable()">
+            <!-- 清除按鈕 -->
+            <button onclick="const i=document.getElementById('objectSearchInput'); i.value=''; i.focus(); filterObjectTable();"
+                    id="clearSearchBtn"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-300 hover:text-slate-500 focus:outline-none transition-colors">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 物件表格 -->
+<div class="border-t border-slate-200 pt-4">
+    @foreach (var t in types)
+    {
+        bool isFirst = t == types.First();
+        <div class="object-type-pane @(isFirst ? "block" : "hidden")" data-type="@t.Name" id="pane-@t.Name">
+            <div class="dba-table-wrapper overflow-auto rounded-lg border border-slate-200 shadow-sm" style="max-height:420px">
+                <table class="min-w-full text-sm dba-datatable" id="objtable-@t.Name">
+                    <thead class="bg-blue-600 text-white sticky top-0 z-10">
+                        <tr>
+                            <th class="px-3 py-3 text-left font-semibold whitespace-nowrap">操作</th>
+                            <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">名稱</th>
+                            <th class="px-4 py-3 text-left font-semibold">中文說明</th>
+                            <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @if (dtObjects != null)
+                        {
+                            foreach (System.Data.DataRow row in dtObjects.Rows)
+                            {
+                                if (row["OBJECT_TYPE"].ToString() != t.Name) continue;
+                                var objName = row["OBJECT_NAME"].ToString();
+                                var status = row["STATUS"].ToString();
+
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-3 py-2 align-middle whitespace-nowrap">
+                                        <div class="flex gap-1">
+                                            @if (t.Name == "TABLE" || t.Name == "VIEW")
+                                            {
+                                                <button class="p-1.5 text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition-colors" onclick="viewData('@currentOwner.@objName')" title="檢視資料">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                </button>
+                                                <button class="p-1.5 text-amber-600 border border-amber-600 rounded hover:bg-amber-50 transition-colors" onclick="viewSchema('@currentOwner.@objName')" title="結構">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                                    </svg>
+                                                </button>
+                                                <button class="p-1.5 text-indigo-600 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors" onclick="viewScript('@currentOwner.@objName')" title="腳本">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="p-1.5 text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition-colors" onclick="viewSource('@currentOwner.@objName', '@t.Name')" title="查看源碼">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                                                    </svg>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2 align-middle">
+                                        @if (t.Name == "TABLE" || t.Name == "VIEW")
+                                        {
+                                            <button onclick="viewData('@currentOwner.@objName')" class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                @objName
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <code class="text-slate-700 flex items-center gap-1 whitespace-nowrap">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                                                </svg>
+                                                @objName
+                                            </code>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-2 align-middle min-w-[160px]">
+                                        @if (t.Name == "TABLE" || t.Name == "VIEW")
+                                        {
+                                            <div class="comment-container flex items-center gap-2" id="comment-@objName">
+                                                <span class="comment-display text-slate-500 text-sm">(載入中...)</span>
+                                                <button class="shrink-0 px-2 py-1 text-sm border border-blue-600 text-blue-600 rounded hover:bg-blue-50 transition-colors"
+                                                        onclick="editObjectComment('@objName')"
+                                                        title="編輯中文說明">
+                                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-slate-400 text-xs">—</span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-2 align-middle whitespace-nowrap">
+                                        <span class="px-2 py-1 rounded-full text-white text-xs font-bold @(status == "VALID" ? "bg-green-600" : "bg-red-600")">
+                                            @(status == "VALID" ? "✅ VALID" : "❌ INVALID")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <!-- 分頁控制列 -->
+            <div id="objpager-@t.Name" class="mt-3 flex items-center justify-between flex-wrap gap-2" style="display:none!important">
+                <span id="objpager-info-@t.Name" class="text-sm text-slate-600"></span>
+                <div class="flex items-center gap-1">
+                    <button type="button" id="objpager-first-@t.Name"
+                        class="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                        onclick="objGoPage('@t.Name',1)" title="第一頁">«</button>
+                    <button type="button" id="objpager-prev-@t.Name"
+                        class="px-3 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                        onclick="objGoPage('@t.Name', objPageState['@t.Name'].cur - 1)">上一頁</button>
+                    <span id="objpager-btns-@t.Name" class="flex items-center gap-1"></span>
+                    <button type="button" id="objpager-next-@t.Name"
+                        class="px-3 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                        onclick="objGoPage('@t.Name', objPageState['@t.Name'].cur + 1)">下一頁</button>
+                    <button type="button" id="objpager-last-@t.Name"
+                        class="px-2 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                        onclick="objGoPage('@t.Name', objTotalPages('@t.Name'))" title="最末頁">»</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 原始碼搜尋面板 -->
+    <div class="object-type-pane hidden" data-type="SOURCE_SEARCH" id="pane-SOURCE_SEARCH">
+        <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <i class="fas fa-search-code text-blue-600"></i> 全文檢索程式碼 (ALL_SOURCE)
+            </h3>
+            <div class="flex gap-4">
+                <div class="flex-1 relative">
+                    <input type="text" id="sourceSearchInput"
+                           class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all shadow-sm"
+                           placeholder="輸入關鍵字搜尋程式碼內容 (例如: 0042)..."
+                           onkeydown="if(event.key==='Enter') doSourceSearch()">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-code text-slate-400"></i>
+                    </div>
+                </div>
+                <button onclick="doSourceSearch()"
+                        class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
+                    <i class="fas fa-magnifying-glass"></i> 開始搜尋
+                </button>
+            </div>
+            <p class="mt-3 text-[11px] text-slate-400">
+                <i class="fas fa-info-circle mr-1"></i> 搜尋對象包括 Procedure, Function, Package 等，僅限當前登入或切換後之帳號。
+            </p>
+        </div>
+
+        <div id="sourceSearchResults" class="hidden">
+            <div class="dba-table-wrapper overflow-auto rounded-lg border border-slate-200 shadow-sm bg-white" style="max-height:500px">
+                <table class="min-w-full text-sm" id="sourceSearchTable">
+                    <thead class="bg-slate-800 text-white sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">擁有者</th>
+                            <th class="px-4 py-3 text-left font-semibold">物件名稱</th>
+                            <th class="px-4 py-3 text-left font-semibold">類型</th>
+                            <th class="px-4 py-3 text-left font-semibold">行數</th>
+                            <th class="px-4 py-3 text-left font-semibold">程式碼內容</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <!-- 由 JS 動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,313 @@
+<div id="sqlModuleContainer" class="flex flex-col gap-4 transition-all duration-300">
+    <!-- SQL Editor Header -->
+    <div class="flex justify-between items-end gap-4">
+        <div>
+            <label class="block text-slate-700 font-bold mb-2 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                SQL 編輯器
+            </label>
+            <div class="text-sm text-slate-600 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                </svg>
+                快捷鍵: <kbd class="px-2 py-1 bg-slate-200 rounded text-sm">Ctrl</kbd> + <kbd class="px-2 py-1 bg-slate-200 rounded text-sm">Enter</kbd> 執行
+            </div>
+        </div>
+        <div class="flex gap-2 shadow-sm">
+            <button class="px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 text-sm font-bold"
+                    onclick="document.getElementById('sqlFileInput').click()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 3h4a2 2 0 012 2v5a2 2 0 01-2 2H9z"/>
+                </svg>
+                載入檔案
+            </button>
+            <button class="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 text-sm font-bold" onclick="clearEditor()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                清除
+            </button>
+            <button class="px-3 py-2 border border-slate-300 text-teal-600 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-1 text-sm font-bold" onclick="formatSqlEditor()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                </svg>
+                格式化
+            </button>
+            <button id="btnMaximize" class="px-3 py-2 border border-slate-300 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors flex items-center gap-1 text-sm font-bold" onclick="toggleSqlEditorMaximize()" title="區域最大化">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+                最大化
+            </button>
+            <button id="btnShrink" class="px-3 py-2 bg-slate-100 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-1 text-sm font-bold hidden" onclick="toggleSqlEditorMaximize()" title="還原視窗">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                還原收縮
+            </button>
+            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1 text-sm font-bold shadow-md" id="btnRunSql" onclick="runSql()">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                執行 (Run)
+            </button>
+        </div>
+        <input type="file" id="sqlFileInput" accept=".sql,.txt" style="display: none;" onchange="loadSqlFile(event)">
+    </div>
+
+    <!-- SQL Editor -->
+    <div id="sqlEditorWrapper" class="relative flex-1 flex flex-col min-h-[200px]">
+        <textarea id="sqlEditor" class="hidden" style="display: none !important;"></textarea>
+    </div>
+</div>
+
+<!-- Execution Results -->
+<div id="execResultArea" class="mt-6 bg-white rounded-lg border border-slate-200 shadow-md p-6">
+    <!-- Result Tabs -->
+    <div class="flex gap-2 border-b border-slate-200 mb-4">
+        <button class="px-4 py-2 text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-colors flex items-center gap-1"
+                data-tab="res-msg" onclick="switchResultTab('res-msg')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            💬 訊息
+        </button>
+        <button class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1"
+                data-tab="res-grid" onclick="switchResultTab('res-grid')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v12m0 0l-4-4m4 4l4-4M3 15h18"/>
+            </svg>
+            📊 資料網格
+        </button>
+        <button class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1"
+                data-tab="res-dbms" onclick="switchResultTab('res-dbms')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 15.536L9 21.071M15.536 9a6.5 6.5 0 11-9.192 9.192m9.192-9.192l6.071 6.071m-6.071-6.071L9 2.929"/>
+            </svg>
+            📢 DBMS 輸出
+        </button>
+        <button class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1"
+                data-tab="res-script" onclick="switchResultTab('res-script')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            📝 執行腳本輸出
+        </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="min-h-80 space-y-4">
+        <!-- Message Tab -->
+        <div id="res-msg" class="tab-pane block">
+            <div id="execStatusMsg" class="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg flex items-center gap-3">
+                <div id="execSpinner" class="hidden">
+                    <svg class="w-5 h-5 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span id="statusText" class="font-semibold">等待指令輸入...</span>
+            </div>
+        </div>
+
+        <!-- Grid Tab -->
+        <div id="res-grid" class="tab-pane hidden">
+            <div id="gridPlaceholder" class="text-center text-slate-500 p-8">
+                <svg class="w-16 h-16 mx-auto mb-3 opacity-25 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v12m0 0l-4-4m4 4l4-4M3 15h18"/>
+                </svg>
+                <p class="text-sm">非查詢語法或尚未執行指令，無可顯示資料</p>
+            </div>
+            <div id="execTableWrapper" class="hidden space-y-3">
+                <div id="execSqlBadges" class="flex flex-wrap gap-2 items-center">
+                    <!-- Badges injected by JS -->
+                </div>
+                <div class="flex justify-between items-center gap-4">
+                    <!-- 搜尋框 -->
+                    <div class="relative w-full max-w-xs">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input type="text" id="execGridSearchInput"
+                               class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                               placeholder="搜尋結果內容..."
+                               onkeyup="filterExecGridTable()">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- 每頁筆數 -->
+                        <div class="flex items-center gap-2 text-sm text-slate-600">
+                            <span class="whitespace-nowrap">每頁</span>
+                            <select id="execPageSize" onchange="changeExecPageSize(this.value)"
+                                    class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                            </select>
+                            <span class="whitespace-nowrap">筆</span>
+                        </div>
+                        <!-- 匯出按鈕 -->
+                        <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors" onclick="exportGridToCSV()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            匯出 CSV
+                        </button>
+                    </div>
+                </div>
+                <div id="execTableScrollArea" class="dba-table-wrapper overflow-auto rounded-lg border border-slate-200 max-h-[60vh] scrollbar-thin scrollbar-thumb-slate-300">
+                    <table id="execDataTable" class="min-w-full text-sm dba-datatable">
+                        <thead class="bg-blue-600 text-white sticky top-0 z-10"></thead>
+                        <tbody class="divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+                <!-- 分頁控制列 -->
+                <div id="execPagination" class="flex items-center justify-between gap-3 pt-1">
+                    <div class="text-sm text-slate-500" id="execPaginationInfo"></div>
+                    <div class="flex items-center gap-1">
+                        <button id="btnExecFirstPage" onclick="goExecPage(1)"
+                                class="px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 text-sm transition-colors" title="第一頁">«</button>
+                        <button id="btnExecPrevPage" onclick="goExecPage(window.execCurrentPage - 1)"
+                                class="px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 text-sm transition-colors" title="上一頁">‹</button>
+                        <div id="execPageNumbers" class="flex items-center gap-1"></div>
+                        <button id="btnExecNextPage" onclick="goExecPage(window.execCurrentPage + 1)"
+                                class="px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 text-sm transition-colors" title="下一頁">›</button>
+                        <button id="btnExecLastPage" onclick="goExecPage(window.execTotalPages)"
+                                class="px-2 py-1.5 rounded border border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 text-sm transition-colors" title="最後頁">»</button>
+                        <span class="text-sm text-slate-500 ml-2">跳至</span>
+                        <input type="number" id="execJumpPage" min="1"
+                               class="w-16 px-2 py-1.5 border border-slate-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               onkeydown="if(event.key==='Enter') goExecPage(parseInt(this.value))" placeholder="頁">
+                        <button onclick="goExecPage(parseInt(document.getElementById('execJumpPage').value))"
+                                class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">GO</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DBMS Output Tab -->
+        <div id="res-dbms" class="tab-pane hidden">
+            <div id="dbmsOutputArea" class="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-sm overflow-auto max-h-80 whitespace-pre-wrap break-words">-- 尚未捕捉到 DBMS_OUTPUT 內容 --</div>
+        </div>
+
+        <!-- Script Output Tab -->
+        <div id="res-script" class="tab-pane hidden">
+            <div id="scriptOutputArea" class="bg-slate-900 text-slate-100 p-4 rounded-lg font-mono text-sm overflow-auto max-h-80 whitespace-pre-wrap break-words">-- 等待執行紀錄 --</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchResultTab(tabId) {
+    console.log('🔄 [switchResultTab] 切換到:', tabId);
+
+    // Hide all tab panes (只選擇 execResultArea 內 .min-h-80 容器下的 .tab-pane)
+    const tabContainer = document.querySelector('#execResultArea > .min-h-80');
+    if (tabContainer) {
+        tabContainer.querySelectorAll('.tab-pane').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+    }
+
+    // Remove all active styles from tab buttons (只選擇 execResultArea 內的按鈕)
+    const buttonContainer = document.querySelector('#execResultArea > .flex.gap-2');
+    if (buttonContainer) {
+        buttonContainer.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.classList.remove('border-blue-600', 'text-blue-600');
+            btn.classList.add('border-transparent', 'text-slate-600', 'hover:text-slate-900');
+        });
+    }
+
+    // Show selected tab
+    const selectedTab = document.getElementById(tabId);
+    if (selectedTab) {
+        selectedTab.classList.remove('hidden');
+        console.log('✅ [switchResultTab] 已顯示 tab:', tabId);
+    } else {
+        console.error('❌ [switchResultTab] 找不到 tab:', tabId);
+    }
+
+    // Highlight selected button
+    if (buttonContainer) {
+        const selectedBtn = buttonContainer.querySelector(`[data-tab="${tabId}"]`);
+        if (selectedBtn) {
+            selectedBtn.classList.remove('border-transparent', 'text-slate-600', 'hover:text-slate-900');
+            selectedBtn.classList.add('border-blue-600', 'text-blue-600');
+            console.log('✅ [switchResultTab] 已高亮按鈕:', tabId);
+        }
+    }
+
+    // 特殊處理：如果切換到資料網格 tab，檢查是否有表格資料
+    if (tabId === 'res-grid') {
+        const table = document.querySelector('#execDataTable tbody');
+        const thead = document.querySelector('#execDataTable thead');
+        // 只要有資料列 OR 有表頭，就視為有資料 (避免剛建立表頭但尚未填入資料時被隱藏)
+        const hasData = (table && table.children.length > 0) || (thead && thead.querySelectorAll('th').length > 0);
+
+        const gridPlaceholder = document.getElementById('gridPlaceholder');
+        const tableWrapper = document.getElementById('execTableWrapper');
+
+        console.log('📊 [switchResultTab] 表格資料:', {
+            hasData,
+            rowCount: table?.children.length,
+            placeholderHidden: gridPlaceholder?.classList.contains('hidden'),
+            wrapperHidden: tableWrapper?.classList.contains('hidden')
+        });
+
+        if (hasData) {
+            // 有資料：隱藏 placeholder，顯示表格
+            gridPlaceholder?.classList.add('hidden');
+            tableWrapper?.classList.remove('hidden');
+            console.log('✅ [switchResultTab] 已顯示表格');
+        } else {
+            // 無資料：顯示 placeholder，隱藏表格
+            gridPlaceholder?.classList.remove('hidden');
+            tableWrapper?.classList.add('hidden');
+            console.log('ℹ️ [switchResultTab] 顯示 placeholder（無資料）');
+        }
+    }
+}
+
+/**
+ * 搜尋結果網格
+ */
+</script>
+
+<style>
+    /* SQL 編輯器區域最大化樣式 */
+    #exec-pane {
+        position: relative;
+    }
+
+    .sql-module-fullscreen {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 50 !important;
+        background: white !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 1rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .sql-module-fullscreen .CodeMirror {
+        flex: 1 !important;
+        height: 100% !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid #cbd5e1 !important;
+        font-size: 1rem !important;
+    }
+
+    /* 確保 CodeMirror 的內部捲動區域與邊欄也填滿 */
+    .sql-module-fullscreen .CodeMirror-scroll,
+    .sql-module-fullscreen .CodeMirror-sizer,
+    .sql-module-fullscreen .CodeMirror-gutter {
+        min-height: 100% !important;
+    }
+</style>

@@ -1,0 +1,61 @@
+<nav class="bg-slate-900 text-white shadow-lg">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <!-- 左側：品牌名稱與圖示 -->
+            <a href="/Home/Index" class="flex items-center gap-2 font-bold text-lg hover:text-cyan-300 transition-colors">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                </svg>
+                <span>Oracle DBA <span class="hidden sm:inline">管理系統</span></span>
+            </a>
+
+            <!-- 中央：導覽菜單 -->
+            <ul class="hidden md:flex items-center gap-6">
+                <li><a href="/Home/Index" class="flex items-center gap-1 hover:text-cyan-300 transition-colors">
+                    儀表板
+                </a></li>
+                <li><a href="javascript:void(0)" id="navMonitor" class="flex items-center gap-1 hover:text-cyan-300 transition-colors">
+                    效能監控
+                </a></li>
+            </ul>
+
+            <!-- Schema 快速切換 & 用戶菜單 -->
+            <div class="flex items-center gap-4">
+                @if (ViewData["AllOwners"] != null)
+                {
+                    var allOwners = ViewData["AllOwners"] as IEnumerable<string>;
+                    var currentOwner = ViewData["CurrentOwner"]?.ToString();
+                    var dsn = ViewData["Dsn"]?.ToString();
+
+                    <div class="hidden lg:flex items-center gap-2">
+                        <label class="text-sm text-slate-300">切換 Schema:</label>
+                        <select class="px-3 py-1 rounded bg-slate-800 text-white border border-slate-700 hover:border-cyan-500 focus:outline-none focus:border-cyan-500 transition-colors text-sm"
+                                onchange="location.href='/Home/Index?owner='+this.value">
+                            <option value="@currentOwner" selected>@currentOwner (當前)</option>
+                            @if (allOwners != null)
+                            {
+                                foreach (var owner in allOwners.Where(o => o != currentOwner))
+                                {
+                                    <option value="@owner">@owner</option>
+                                }
+                            }
+                        </select>
+                        @if (!string.IsNullOrEmpty(dsn))
+                        {
+                            <span class="flex items-center gap-1 px-2 py-1 rounded bg-slate-700 text-cyan-300 text-xs font-mono border border-slate-600">
+                                @dsn
+                            </span>
+                        }
+                    </div>
+                }
+
+                <!-- 用戶菜單 -->
+                <div class="relative group">
+                    <button class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors">
+                        <span class="text-sm font-medium hidden sm:inline">@ViewData["CurrentOwner"]</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

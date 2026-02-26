@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Oracle DBA 系統登入";
+    Layout = "_Layout";
+}
+
+<div class="min-h-[85vh] bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center px-4">
+    <div class="w-full max-w-md space-y-6">
+        <!-- 登入表單卡片 -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 hover:shadow-blue-200 hover:-translate-y-1">
+            <!-- 卡片標題 -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-6">
+                <h3 class="text-2xl font-bold flex items-center justify-center gap-2">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                    Oracle DBA 系統登入
+                </h3>
+            </div>
+
+            <!-- 表單內容 -->
+            <div class="p-8">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 shadow-sm">
+                        @Html.ValidationSummary(false, "", new { @class = "text-sm list-none p-0 m-0" })
+                    </div>
+                }
+
+                <form asp-controller="Account" asp-action="Login" method="post" id="loginForm" class="space-y-6">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                    <!-- TNS 連線選擇 -->
+                    <div>
+                        <label for="tns" class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                            連線目標 (TNS)
+                        </label>
+                        <select class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-700 bg-white shadow-sm"
+                                name="tns" id="tns" required>
+                            <option value="" selected disabled>請選擇 TNS 連線...</option>
+                            @if (ViewData["TnsList"] is List<string> tnsList)
+                            {
+                                foreach (var tnsName in tnsList)
+                                {
+                                    <option value="@tnsName">🌐 @tnsName</option>
+                                }
+                            }
+                        </select>
+                        <p class="mt-2 text-sm text-slate-500 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            自動從 TNSNAMES.ORA 抓取的名稱
+                        </p>
+                    </div>
+
+                    <!-- 資料庫帳號 -->
+                    <div>
+                        <label for="username" class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            資料庫帳號
+                        </label>
+                        <input type="text"
+                               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                               name="username"
+                               id="username"
+                               placeholder="例如: SYSTEM"
+                               required>
+                    </div>
+
+                    <!-- 密碼 -->
+                    <div>
+                        <label for="password" class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            密碼
+                        </label>
+                        <input type="password"
+                               class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                               name="password"
+                               id="password"
+                               required>
+                    </div>
+
+                    <!-- 提交按鈕 -->
+                    <div class="pt-4">
+                        <button type="submit"
+                                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transform transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                id="loginBtn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            連線並進入控制台
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 卡片底部提示 -->
+            <div class="bg-slate-50 text-center py-4 border-t border-slate-200">
+                <small class="text-slate-600 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    請確保 Oracle Client 已正確連線至資料庫
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 處理中 Modal 此處會保留，為求範例先以簡化版呈現 -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+        <div class="text-center space-y-6">
+            <div class="flex justify-center">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+            <h4 class="text-2xl font-bold text-blue-600">正在連線中</h4>
+            <p class="text-slate-600" id="loadingMessage">正在建立資料庫連線，請稍候...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function () {
+            document.getElementById('loadingModal').classList.remove('hidden');
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="w-5 h-5 animate-spin inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>連線中...';
+        });
+
+        // 如果有表單重試（例如登入錯誤），關閉載入視窗
+        document.getElementById('loadingModal').classList.add('hidden');
+    </script>
+}

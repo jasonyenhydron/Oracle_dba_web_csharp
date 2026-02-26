@@ -1,0 +1,116 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    var currentOwner = ViewData["CurrentOwner"] ?? "HR";
+    var currentRowLimit = ViewData["RowLimit"] ?? 1500;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/sql.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sql-formatter@12.2.4/dist/sql-formatter.min.js"></script>
+
+<link rel="stylesheet" href="~/css/content.css?v=2">
+
+<style>
+/* 隱藏標籤列滾動條 */
+#dbaTab::-webkit-scrollbar {
+    display: none;
+}
+</style>
+
+<div class="bg-white rounded-xl shadow-lg overflow-hidden" data-current-owner="@currentOwner">
+    <!-- Tab Navigation -->
+    <div class="border-b border-slate-200">
+        <div class="flex overflow-x-auto" id="dbaTab" role="tablist">
+            <button class="flex-1 px-6 py-4 font-bold text-slate-700 border-b-2 border-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                    data-tab="obj-pane" role="tab" aria-selected="true">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                📦 物件導覽
+            </button>
+            <button class="flex-1 px-6 py-4 font-bold text-slate-700 border-b-2 border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                    data-tab="sql-pane" role="tab" aria-selected="false">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                📜 SQL 歷史
+            </button>
+            <button class="flex-1 px-6 py-4 font-bold text-blue-600 border-b-2 border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                    data-tab="exec-pane" role="tab" aria-selected="false">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                ⚡ 執行 SQL
+            </button>
+            <button class="flex-1 px-6 py-4 font-bold text-red-600 border-b-2 border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                    data-tab="job-pane" role="tab" aria-selected="false">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                ⏰ Schedule Job
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="mainTabContent" class="p-6 min-h-[600px]">
+        <!-- Object Browser -->
+        <div class="tab-pane active" id="obj-pane">
+            <partial name="Partials/_object_browser" />
+        </div>
+
+        <!-- SQL History -->
+        <div class="tab-pane hidden" id="sql-pane">
+            <partial name="Partials/_sql_history" />
+        </div>
+
+        <!-- Execute SQL -->
+        <div class="tab-pane hidden" id="exec-pane">
+            <partial name="Partials/_execute_sql" />
+        </div>
+
+        <!-- Schedule Job -->
+        <div class="tab-pane hidden" id="job-pane">
+            <partial name="Partials/_schedule_job" />
+        </div>
+    </div>
+</div>
+
+<partial name="Partials/_modal" />
+
+@section Scripts {
+    <script>
+    // Simple Tab Management without jQuery (Scoped to Main Tabs only)
+    document.querySelectorAll('#dbaTab [data-tab]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+
+            // Hide all panes
+            document.querySelectorAll('#mainTabContent > .tab-pane').forEach(pane => {
+                pane.classList.add('hidden');
+                pane.classList.remove('active');
+            });
+
+            // Deactivate all main tabs
+            document.querySelectorAll('#dbaTab [data-tab]').forEach(tab => {
+                tab.classList.remove('border-blue-600', 'bg-blue-50');
+                tab.classList.add('border-slate-200');
+                tab.setAttribute('aria-selected', 'false');
+            });
+
+            // Activate clicked tab
+            this.classList.remove('border-slate-200');
+            this.classList.add('border-blue-600', 'bg-blue-50');
+            this.setAttribute('aria-selected', 'true');
+
+            // Show corresponding pane
+            document.getElementById(tabName).classList.remove('hidden');
+        });
+    });
+
+    window.APP_ROW_LIMIT = @currentRowLimit;
+    </script>
+    <script src="~/js/content.js?v=25"></script>
+    <script src="~/js/schedule_job.js?v=16"></script>
+}
